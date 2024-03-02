@@ -1,0 +1,21 @@
+
+██████╗ ██╗   ██╗ █████╗ ██████╗  █████╗ ███╗   ██╗████████╗██╗███╗   ██╗███████╗
+██╔═══██╗██║   ██║██╔══██╗██╔══██╗██╔══██╗████╗  ██║╚══██╔══╝██║████╗  ██║██╔════╝
+██║   ██║██║   ██║███████║██████╔╝███████║██╔██╗ ██║   ██║   ██║██╔██╗ ██║█████╗  
+██║▄▄ ██║██║   ██║██╔══██║██╔══██╗██╔══██║██║╚██╗██║   ██║   ██║██║╚██╗██║██╔══╝  
+╚██████╔╝╚██████╔╝██║  ██║██║  ██║██║  ██║██║ ╚████║   ██║   ██║██║ ╚████║███████╗
+ ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝╚══════╝
+
+About: quarantine is a tool used to shutdown all active network adapters
+using ifconfig (the net-tools package will need to be installed
+as a dependency). Ultimately, this means that all network traffic
+will be halted in or out of the system.
+
+usage: quarantine enable
+       quarantine disable
+
+
+Options:
+    enable          Turn off all network adapters on the system
+    disable         Turn on all network adapters on the system
+    -h, --help      Display this message

@@ -1,0 +1,104 @@
+#!/bin/bash
+
+. /opt/bluekit/resources/utilities/sys
+
+# check any running services such as SSH
+function checkNetworkServices () {
+    echo "[IMPLEMENTATION ERROR] FIX checkNetworkServices()"
+}
+
+# Print out the networking conditions of the system
+function checkNetStat () {
+    echo "[IMPLEMENTATION ERROR] FIX checkNetStat()"
+}
+
+# Check if firewalls are installed and running
+function checkFirewall () {
+
+    printFormattedHeader "FIREWALL STATUS"
+
+    firewallInstalled=false
+
+    if checkCommand ufw; then
+        printSecure "UFW installed"
+        firewallInstalled=true
+        getUFWStatus
+    fi
+
+    if checkCommand iptables; then
+        printSecure "IPTables installed"
+        firewallInstalled=true
+        getIPTablesStatus
+    fi
+
+    if checkCommand firewalld; then
+        printSecure "Firewalld installed"
+        firewallInstalled=true
+        getFirewallDStatus
+    fi
+
+    if ! ($firewallInstalled); then
+        printCritical "No Firewall Detected..."
+    fi
+
+}
+
+# get the enabled/disabled status of ufw
+function getUFWStatus () {
+
+    if [ "$(ufw status | grep Status | awk '{print $2}')" = "inactive" ]; then
+        print "\t    ${YELLOW}╚═> UFW STATUS: ${RED}Disabled"
+    elif [ "$(ufw status | grep Status | awk '{print $2}')" = "active" ]; then
+        print "\t    ${YELLOW}╚═> UFW STATUS: ${GREEN}Enabled"
+    elif [ "$(ufw status | grep Status | awk '{print $2}')" = "failed" ]; then
+        print "\t    ${YELLOW}╚═> UFW STATUS: ${RED}Failed"
+    else 
+        print "\t    ${YELLOW}╚═> UFW STATUS: ${CYAN}Unknown"
+    fi
+
+}
+
+function getIPTablesStatus () {
+    if checkCommand systemctl; then
+        if [ "$(systemctl status iptables | grep Active | awk '{print $2}')" = "inactive" ]; then
+            print "\t    ${YELLOW}╚═> IPTABLES STATUS: ${RED}Disabled"
+        elif [ "$(systemctl status iptables | grep Active | awk '{print $2}')" = "active" ]; then
+            print "\t    ${YELLOW}╚═> IPTABLES STATUS: ${GREEN}Enabled"
+        elif [ "$(systemctl status iptables | grep Active | awk '{print $2}')" = "failed" ]; then
+            print "\t    ${YELLOW}╚═> IPTABLES STATUS: ${RED}Failed"
+        else 
+            print "\t    ${YELLOW}╚═> IPTABLES STATUS: ${CYAN}Unknown"
+        fi
+    fi
+
+    
+}
+
+function getFirewallDStatus () {
+    if checkCommand systemctl; then
+        if [ "$(systemctl status firewalld | grep Active | awk '{print $2}')" = "inactive" ]; then
+            print "\t    ${YELLOW}╚═> FIREWALLD STATUS: ${RED}Disabled"
+        elif [ "$(systemctl status firewalld | grep Active | awk '{print $2}')" = "active" ]; then
+            print "\t    ${YELLOW}╚═> FIREWALLD STATUS: ${GREEN}Enabled"
+        elif [ "$(systemctl status firewalld | grep Active | awk '{print $2}')" = "failed" ]; then
+            print "\t    ${YELLOW}╚═> FIREWALLD STATUS: ${RED}Failed"
+        else 
+            print "\t    ${YELLOW}╚═> FIREWALLD STATUS: ${CYAN}Unknown"
+        fi
+    fi
+
+}
+
+function getSSHStatus (){
+    if checkCommand systemctl; then
+        if [ "$(systemctl status sshd | grep Active | awk '{print $2}')" = "inactive" ]; then
+            return 1
+        elif [ "$(systemctl status sshd | grep Active | awk '{print $2}')" = "active" ]; then
+            return 0
+        elif [ "$(systemctl status sshd | grep Active | awk '{print $2}')" = "failed" ]; then
+            return 0
+        else 
+            return 0
+        fi
+    fi
+}

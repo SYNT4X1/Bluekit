@@ -1,0 +1,48 @@
+#!/bin/bash
+
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+RESET_COLOR="\033[0m"
+
+case $1 in
+"enable")
+    for interface in /sys/class/net/*; do
+        ifconfig `basename $interface` down 
+    done
+
+    if [ $? -eq 0 ] ; then
+        echo -e "Quarantine ${GREEN}enabled${RESET_COLOR}: All network adapters have been shut down!"
+    else 
+        echo "try using sudo quarantine enable"
+    fi
+;;
+"disable")
+    for interface in /sys/class/net/*; do
+        ifconfig `basename $interface` up
+    done
+
+    if [ $? -eq 0 ]; then
+        echo -e "Quarantine ${RED}Disabled${RESET_COLOR}: All network adapters are now up!"
+    else 
+        echo "try using sudo quarantine disable"
+    fi
+    
+;;
+
+"--help")
+    cat /opt/bluekit/resources/useless/quarantine_help
+    echo
+    echo
+
+;;
+
+"-h")
+    cat /opt/bluekit/resources/useless/quarantine_help
+    echo 
+    echo
+;;
+*)  
+    echo "usage: quarantine enable"
+    echo "usage: quarantine disable"
+;;
+esac

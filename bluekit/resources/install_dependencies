@@ -1,0 +1,15 @@
+#!/bin/bash
+
+. /opt/bluekit/resources/utilities/sys
+
+case getOSName in
+    "Ubuntu") # apt package manager
+        
+    ;;
+    "Debian") # apt package manager
+    ;;
+    "Centos") # yum package manager
+    ;;
+    "Arch") # pacman package manager
+    ;;
+esac

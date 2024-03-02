@@ -1,0 +1,163 @@
+#!/bin/bash
+
+RESET_COLOR="\033[0m"
+
+RED="\033[0;31m"
+YELLOW="\033[0;33m"
+GREEN="\033[0;32m"
+BRIGHT_BLUE="\033[0;94m"
+CYAN="\033[0;36m"
+
+VERSION="1.0.0"
+
+OS=`grep -w ID /etc/*-release | awk -F "=" '{print tolower($2)}' | tr -d '"'`
+
+function installPackage () {
+
+    case $OS in
+    "ubuntu") # apt package manager
+        apt-get -y install $1
+    ;;
+    "debian") # apt package manager
+        apt-get -y install $1
+    ;;
+    "centos") # yum package manager
+        yum -y install $1
+    ;;
+    "kali")
+        apt-get -y install $1
+    ;;
+    "arch") # pacman package manager
+        pacman -S --noconfirm $1
+    ;;
+    esac
+
+
+}
+
+function installUpdates (){
+
+    echo -n "Would you like to update the system (Not upgrade)? (Y/N): "
+    read response
+    response=`echo -n $response | tr '[:upper:]' '[:lower:]'`
+    if [ "$response" == "y" ]; then
+       case $OS in
+        "ubuntu") # apt package manager
+            apt update
+        ;;
+        "debian") # apt package manager
+            apt update
+        ;;
+        "centos") # yum package manager
+            rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-11.noarch.rpm
+            yum -y install epel-release
+            yum -y install snapd
+            yum -y update
+        ;;
+        "kali")
+            apt update 
+        ;;
+        "arch") # pacman package manager
+            pacman -S --noconfirm $1
+        ;;
+        esac
+
+    else
+        exit 0   
+    fi
+
+}
+
+function installDependecies() {
+
+    echo -n "Would you like to install dependencies? (Y/N): "
+    read response
+    response=`echo -n $response | tr '[:upper:]' '[:lower:]'`
+    if [ "$response" == "y" ]; then
+        grep -w all ./bluekit/resources/dependencies | while read package_all; 
+        do
+            echo "Attempting to install $package_all"
+            installPackage $package_all
+        done
+
+        grep -w $OS ./bluekit/resources/dependencies | while read package_os; 
+        do  
+            echo "Attempting to install $package_os"
+            installPackage $package_os
+        done
+
+    else
+        exit 0   
+    fi
+}
+
+function MainPrompt (){
+
+    echo -e -n "${BRIGHT_BLUE}"
+    cat ./bluekit/resources/useless/banners_helpers/install_banner
+    echo -e "${RESET_COLOR}"
+    echo -e "Version: $VERSION\n"
+
+
+    spin[0]="-"
+    spin[1]="\\"
+    spin[2]="|"
+    spin[3]="/"
+
+    echo -e "${GREEN}Installation Process...${RESET_COLOR}"
+
+    # install bluekit dir to /opt
+    cp -r bluekit /opt 2>/dev/null & PID=$!
+
+    if [[ $? -eq 1 ]]; then
+        echo "Failed to copy the install files to /opt. Try running with sudo..."
+        exit 0
+    fi
+
+    # output that it's being installed
+    echo -ne "[*] Installing Bluekit in /opt/bluekit\t"
+    # While process is running...
+    while kill -0 $PID 2> /dev/null;
+    do
+    for i in "${spin[@]}"
+    do
+            echo -ne "\b$i"
+            sleep 0.1
+    done
+    done
+    echo -e "\bDone!"
+
+    # update the global bash profile if the path to /opt/bluekit isn't installed
+    echo -ne "[*] Updating path to recognize Bluekit. Appending /opt/bluekit\t"
+    if ! grep -q "PATH=\"$PATH:/opt/bluekit\"" /etc/environment 2> /dev/null && PID=$!;then
+        echo PATH="$PATH:/opt/bluekit" >> /etc/environment
+        if [[ $? -eq 1 ]]; then
+            echo "Failed to update path. Installer may need permissions. Try running as sudo..."
+            exit 0
+        fi
+    fi 
+
+    while kill -0 $PID 2> /dev/null;
+    do
+    for i in "${spin[@]}"
+    do
+            echo -ne "\b$i"
+            sleep 0.1
+    done
+    done
+    echo -e "\bDone!\n"
+
+    # list out the installed programs from bluekit
+    echo -e "The following programs have been added to the system: "
+    for file in "/opt/bluekit"/*; do
+        if [[ -f "$file" ]]; then
+            echo -ne "\t- "
+            basename $file
+        fi
+    done
+
+}
+
+MainPrompt
+installUpdates
+installDependecies

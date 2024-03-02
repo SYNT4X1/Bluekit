@@ -1,0 +1,59 @@
+#!/bin/bash
+
+FTP_USERS="./resources/creds/ftp_users"
+FTP_FILES="./resources/default/ftp_file_sanity"
+
+function backupSystem () {
+
+    mkdir $1
+    cp -r /mnt/files $1/files
+
+    touch $1/checksums
+
+    for file in "/mnt/files"/*; 
+    do
+        sha256sum $file >> $1/checksums
+    done
+
+}
+
+function checkSystemUsers (){
+
+    cat $FTP_USERS | while read user; 
+    do
+        if grep -q $user /etc/passwd; then
+            echo "User: $user is a valid user"
+            echo ""
+        fi
+    done
+
+}
+
+function makeTestFiles (){
+    cat $FTP_FILES | while read file;
+    do
+    touch /mnt/files/$file
+    done
+
+}
+
+function auditFiles () {
+    if ! diff -q $1 /mnt/files; then
+        for file in "/mnt/files"/*;
+        do
+            if ! grep -q "$(sha256sum $file)" $1 ; then
+                echo "$file failed audit due to hash"
+            fi
+        done
+    else
+        for file in "$1"/*; then
+        do
+            if ! [ -f "/mnt/files/$file" ]; then
+                echo "$file is missing"
+            fi
+        done
+    fi
+
+}
+
+auditFiles /backups/checksums

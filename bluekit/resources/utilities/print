@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# prints a formmatted header for the individual checks
+function printFormattedHeader () {
+    print "\n===\n${BRIGHT_BLUE}$1${RESET_COLOR}\n==="
+}
+
+
+function printSystemInfo () {
+
+    print "\n===\nSYSTEM INFO\n==="
+    print "${BRIGHT_BLUE}Running $OS" 
+    print "${BRIGHT_BLUE}Kernal: $KERNAL"
+    print "${BRIGHT_BLUE}Init: $INIT" 
+
+}
+
+# Glorified Echo, this just prevents the headache of having to reset the color all the time
+function print () { 
+    echo -e "$1 ${RESET_COLOR}" 
+}
+
+# print for critical security errors, these are things that need to be fixed
+function printCritical () { 
+    echo -e "${RED}[x][CRITICAL]${RESET_COLOR} $1 ${RESET_COLOR}" 
+}
+
+# print for basic warning, these are things that should be fixed
+function printWarning () { 
+    echo -e "${YELLOW}[*][WARNING]${RESET_COLOR} $1 ${RESET_COLOR}" 
+}
+
+# print for saying things are okay
+function printSecure () { 
+    echo -e "${GREEN}[✓][SECURE]${RESET_COLOR} $1 ${RESET_COLOR}" 
+}

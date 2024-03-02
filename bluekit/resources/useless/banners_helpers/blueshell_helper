@@ -1,0 +1,20 @@
+██████╗ ██╗     ██╗   ██╗███████╗███████╗██╗  ██╗███████╗██╗     ██╗     
+██╔══██╗██║     ██║   ██║██╔════╝██╔════╝██║  ██║██╔════╝██║     ██║     
+██████╔╝██║     ██║   ██║█████╗  ███████╗███████║█████╗  ██║     ██║     
+██╔══██╗██║     ██║   ██║██╔══╝  ╚════██║██╔══██║██╔══╝  ██║     ██║     
+██████╔╝███████╗╚██████╔╝███████╗███████║██║  ██║███████╗███████╗███████╗
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
+
+About: Blueshell is a shell jail designed to be used with SSH and key
+authentication. Wholly configurable and memeable, it is you're next
+best friend!
+
+usage: blueshell
+       blueshell --config <entry>
+
+
+Options:
+    --config [entry]    Configure the following
+        password        password for breakout
+        lock            configure the lock file
+    -h, --help          Display this message

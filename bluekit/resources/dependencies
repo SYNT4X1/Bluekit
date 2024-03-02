@@ -1,0 +1,17 @@
+net-tools @ all 
+iptables @ all
+libnotify @ all
+chafa @ all
+rkhunter @ all
+clamav @ all
+clamtk @ all
+
+iptables-persistent @ ubuntu
+libnotify-bin @ ubuntu
+
+iptables-service @ centos
+
+snort @ kali
+wireshark @ kali
+
+clamav-daemon @ debian

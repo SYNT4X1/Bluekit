@@ -1,0 +1,134 @@
+#!/bin/bash
+
+# Check if a command on a system is functional
+function checkCommand () {
+
+    if ! [ -x "$(command -v $1)" ]; then
+        return 1
+    else
+        return 0
+    fi
+
+}
+
+# Get the OS name of a system
+function getOSName () {
+
+    
+    if [ $? -eq 0 ]; then
+        grep -w ID /etc/*-release | awk -F "=" '{print $2}'
+    else
+        return 0
+    fi
+
+}
+
+# Check if executing script is run as root
+function checkPriv () {
+
+    if [ "$EUID" -ne 0 ]; then 
+        return 1
+    else
+        return 0
+    fi
+
+}
+
+# Returns True if account is locked, false if unlocked
+function accountLock (){
+
+    if [ "$(passwd -S $1 | awk '{print $2'})" = "L" ] || [ "$(passwd -S $1 | awk '{print $2}')" = "LK" ]; then
+        return 0 # true if locked
+    else
+        return 1 # false if unlocked
+    fi
+
+
+}
+
+# returns true is account has sudo privilage, false if not
+function sudoer (){
+    sudo -l -U $1 | grep "not allowed" > /dev/null
+    if [[ $? -eq 0 ]]; then
+        return 1
+    else 
+        return 0
+    fi
+
+}
+
+# this function takes in a string from the /etc/shadow file
+# and echo's the corresponding hash identification
+function hashID () {
+
+    ID=$(echo $1 | awk -F "$" '{print $2}')
+    
+    case $ID in
+
+        "y")
+            ID="yescrypt"
+        ;;
+        "7")
+            ID="yescrypt"
+        ;;
+        "6")
+            ID="SHA512"
+        ;;
+        "5")
+            ID="SHA256"
+        ;;
+        "2a")
+            ID="Blowfish"
+        ;;
+        "1")
+            ID="MD5"
+        ;;
+    esac
+
+    echo $ID
+}
+
+function getPasswordHash () {
+    
+    echo -n $(grep $1 /etc/shadow | awk -F ":" '{print $2}')
+}
+
+function getPasswordSalt () {
+
+    SALT=$(grep $1 /etc/shadow | awk -F "$" '{print $3}')
+    
+    echo -n $SALT
+}
+
+function getPasswordParam () {
+
+    PARAM=$(grep $1 /etc/shadow | awk -F "$" '{print $2}')
+    
+    echo -n $PARAM
+}
+
+function getPasswordID () {
+
+    ID=$(hashID $(grep $1 /etc/shadow))
+    
+    echo -n $ID
+}
+
+function getGroups (){
+
+    groups $1
+
+}
+
+function getSSHPort (){
+
+    if grep -q -w -F 'Port' /etc/ssh/sshd_config; then
+        echo $(grep -F -w 'Port' /etc/ssh/sshd_config | awk '{print $2}')
+    else
+        echo 22
+    fi
+} 
+
+OS="$(getOSName)"
+KERNAL="$(uname -srm)"
+INIT="$(ps -p 1 -o comm=)"

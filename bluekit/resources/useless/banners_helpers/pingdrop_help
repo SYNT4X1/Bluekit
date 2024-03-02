@@ -1,0 +1,24 @@
+
+██████╗ ██╗███╗   ██╗ ██████╗ ██████╗ ██████╗  ██████╗ ██████╗ 
+██╔══██╗██║████╗  ██║██╔════╝ ██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+██████╔╝██║██╔██╗ ██║██║  ███╗██║  ██║██████╔╝██║   ██║██████╔╝
+██╔═══╝ ██║██║╚██╗██║██║   ██║██║  ██║██╔══██╗██║   ██║██╔═══╝ 
+██║     ██║██║ ╚████║╚██████╔╝██████╔╝██║  ██║╚██████╔╝██║     
+╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝ 
+
+About: pingdrop is a command used to control icmp responses using
+the iptables firewall. When enabled, the system wont respond to
+pings and therefore possibly appear down to others on the network.
+However, services and other applications using network will still
+remain active. You can also specify an ip address to filter ICMP 
+pings from, and pingdrop will block that ip adress specifically.
+
+usage: pingdrop enable [IP]
+       pingdrop disable [IP]
+
+
+Options:
+    enable          drop any response to icmp pings
+    disable         continue responding to icmp pings
+    [IP]            enterable IP address, eg. 127.0.0.1
+    -h, --help      Display this message

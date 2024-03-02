@@ -1,0 +1,272 @@
+#!/bin/bash
+
+# PLEASE CUSTOMIZE ME
+
+# this still requires and installer and way to modify all accepted keys
+# locks are stored in the /etc/blueshell/lock
+
+# you have two implementations one of which is more secure in my opinion and the other being the less secure
+# you can implement with the authorized_keys file (locate in ~/.ssh) and forced commands which will excecute the script first then launch the ssh session
+# inside of it. Or, you can detect if the shell session is an active ssh session with your .bashrc and execute the script. Goodluck!
+
+# *<IP> for ip addresses
+# %<USER> for user locks
+
+# lock file can be stored, defualt is /etc/blueshell/lock
+LOCK_FILE="/etc/blueshell/lock"
+BREAKOUT_COMMAND="freedom"
+AUTH_FILE="/etc/blueshell/auth"
+PASSWORD_TRYS=3
+
+
+# these are the available commands to the blueshell
+PERMITTED_COMMANDS=("ls" "commands" "exit" "clear" "cd" "whoami" "echo")
+
+
+# these are local, do not configure
+ACCOUNT_LOCK=false
+SSH_CLIENT_IP="$(echo $SSH_CONNECTION | awk '{print $1}')"
+SSH_CLIENT_TTY="$(ps hotty $$)" # love this command
+
+if [ -z $SSH_CLIENT_IP ];then
+	SSH_CLIENT_IP="$(hostname -i)"
+fi
+
+
+# fun button 
+function haveSomeFun(){
+
+	cat /dev/urandom > /dev/null & PID=$!
+	end=$((SECONDS+5))
+
+	while [ $SECONDS -lt $end ];
+	do
+		MEME="/opt/bluekit/resources/useless/memes/$(ls /opt/bluekit/resources/useless/memes | shuf -n 1 )"
+		chafa --stretch $MEME
+		clear
+	done
+	exit 0
+}
+
+# change the breakout command password
+function changePassword() {
+
+	touch /etc/blueshell/auth 2> /dev/null
+
+	if $(grep -q - $AUTH_FILE); then
+		echo "Overwriting current password..."
+		echo -n "Old Password: "
+		read oldPass
+		if [ "$(echo $oldPass | sha256sum)" == "$(cat $AUTH_FILE | grep - )" ]; then
+			echo -n "New Password: "
+			read newPass
+			echo -n "Confirm Password: "
+			read confPass
+			if [ $newPass == $confPass ]; then
+				notify-send "BLUESHELL STATUS: PASSWORD UPDATE" "Password for breakout command has been updated" 2> /dev/null
+				echo $newPass | sha256sum > /etc/blueshell/auth
+				echo "Password Updated"
+			else
+				echo "Passwords do not match"
+			fi
+		else
+			echo "incorrect password..."
+		fi
+	else
+		echo "Creating new auth file"
+		echo -n "New Password: "
+		read newPass
+		echo -n "Confirm Password: "
+		read confPass
+		if [ $newPass == $confPass ]; then
+			. /usr/bin/notify-send "BLUESHELL STATUS: PASSWORD UPDATE" "Password for breakout command has been updated" 2> /dev/null
+			echo $newPass | sha256sum > /etc/blueshell/auth
+			echo "Password Updated"
+		else
+			echo "Passwords do not match"
+		fi
+	fi
+	return 0
+
+}
+
+# check if the entered argument is in the PERMITTED_COMMANDS array
+# as an element
+function commandCheck() {
+	for command in "${PERMITTED_COMMANDS[@]}"
+	do
+		if [ "$command" == "$1" ] ; then
+			return 0
+			break
+		fi
+	done
+	return 1
+}
+
+function checkLocks() {
+
+	if grep -q -w -F "@" "$LOCK_FILE" 2> /dev/null; then 
+		return 1000
+	elif grep -q -w -F "%$USER" "$LOCK_FILE" 2> /dev/null; then
+		return 1001
+	elif grep -q -w -F "*$SSH_CLIENT_IP" "$LOCK_FILE" 2> /dev/null; then
+		return 1002
+	else
+		return 0
+	fi
+}
+
+function configureBlueshell() {
+	case $1 in 
+
+		# --config flag 
+		"--config")
+
+			if [ "$2" ]; then
+
+				if [ "$EUID" -eq 0 ]; then
+
+					mkdir /etc/blueshell 2> /dev/null
+
+					case $2 in
+						"password")
+							changePassword
+						;;
+						"lock")
+							nano /etc/blueshell/lock
+						;;
+						*)
+							echo -e "Available Entries:\n - password\n - lock\n"
+							echo -e "usage: blueshell --config <entry>\n" 
+						;;
+					esac
+
+				else 
+					echo "please configure in root"
+				fi
+			else
+				echo -e "usage: blueshell"
+				echo -e "usage: blueshell --config <entry>" 
+			fi
+		;;
+
+		# --help flag
+		"--help")
+			cat /opt/bluekit/resources/useless/banners_helpers/blueshell_helper
+			echo -e "\n"
+		;;
+		"-h")
+			cat /opt/bluekit/resources/useless/banners_helpers/blueshell_helper
+			echo -e "\n"
+		;;
+
+		"--init")
+			if [ "$EUID" -eq 0 ]; then
+				mkdir /etc/blueshell 2> /dev/null
+				touch /etc/blueshell/auth 2> /dev/null
+				touch /etc/blueshell/lock 2> /dev/null
+				echo "/etc/blueshell files initialized"
+			else
+				echo "please init as root"
+			fi
+		;;
+		# improper flag usage
+		*)
+			echo -e "usage: blueshell"
+			echo -e "usage: blueshell --config <entry>" 
+		;;
+	esac
+}
+
+
+# Perform the auth process for the breakout command
+# suppressed error output to /dev/null incase the lock file isn't present it doesn't give the attacker info
+# with that said, MAKE A LOCK FILE
+function checkAuth() {
+
+	# this will notify the local machine through gui of new shell
+	notify-send -u critical "BLUESHELL: PRIVILEGE ELEVATION REQUEST" "User <b>$USER</b> has run the freedom command from <b>$SSH_CLIENT_IP</b> with terminal instance <b>$(ps hotty $$)</b> ($(date +'%D %H:%M:%S')) ($(date +'%D %H:%M:%S'))" 2> /dev/null
+
+	# finally, this will check if the local session instance has a lock 
+	# through the locally instanced $ACCOUNT_LOCK var, which is a boolean
+	if checkLocks; then
+		if ! $ACCOUNT_LOCK; then
+			# this will all up to $PASSWORD_TRYS to authenticate then 
+			# if all attempts fail to match the hash, lock the session
+			# through $ACCOUNT_LOCK. 
+			for ((try=0;try<PASSWORD_TRYS;try++)); do
+				echo -n "Password: "
+				read password
+				if [ "$(echo $password | sha256sum)" == "$(head -n 1 $AUTH_FILE)" ]; then
+					notify-send -u critical "BLUESHELL: SESSION BROKEN" "$USER entered has full ssh access from $SSH_CLIENT_IP on $SSH_CLIENT_TTY ($(date +'%D %H:%M:%S'))" 2> /dev/null
+					/bin/bash
+					break;
+				else
+					echo "password incorrect. $(($PASSWORD_TRYS-$try-1)) trys left"
+				fi
+			done
+
+			# this is the actual locking of the account 
+			# plus security notif
+			if [[ $try == 3 ]]; then
+				ACCOUNT_LOCK=true
+				notify-send -u critical "BLUESHELL: SESSION LOCK ADMINISTERED" "$USER entered blueshell password incorrectly multiple times from $SSH_CLIENT_IP ($(date +'%D %H:%M:%S'))" 2> /dev/null
+				chafa --stretch /opt/bluekit/resources/useless/memes/jail.gif
+			fi
+		else
+			haveSomeFun
+			ACCOUNT_LOCK=true
+			echo "freedom for this session has been locked"
+		fi
+	else
+		haveSomeFun
+	fi
+}
+
+# will list available commands from the PERMITTED_COMMANDS array
+function listCommands() {
+	echo "${PERMITTED_COMMANDS[@]}"
+}
+
+if [ $# -eq 0 ]; then
+
+	mkdir ~/blueshell_logs 2> /dev/null
+	touch ~/blueshell_logs/log
+	echo -e "[ CONNECTION ESTABLISHED ] ($(date +'%D %H:%M:%S')) $SSH_CLIENT_IP $USER" >> ~/blueshell_logs/log
+	# the initial indicator of shell instance
+	notify-send -u critical "BLUESHELL STATUS: BLUESHELL SESSION CREATED" "User <b>$USER</b> was logged in from <b>$SSH_CLIENT_IP</b> with terminal instance <b>$SSH_CLIENT_TTY</b> ($(date +'%D %H:%M:%S'))" 2> /dev/null
+
+	# this is the shell prompting
+	echo -n "$(pwd) $ "
+	read command
+	while [ "$command" != "exit" ]
+	do
+		echo -e "[ CONNECTION COMMAND ] ($(date +'%D %H:%M:%S')) $SSH_CLIENT_IP $USER \"$command\"" >> ~/blueshell_logs/log
+		# commands is a blueshell specific commmand
+		# this defines it's behavior by checking against input
+		if [ "$command" == "commands" ]; then
+			listCommands
+
+		# Breakout is custom (default is freedom) behavior
+		# also needs to be defined
+		elif [ "$command" == "$BREAKOUT_COMMAND" ]; then
+			checkAuth
+		
+		# finally, run the commands if the commandCheck authorizes them
+		elif $(commandCheck $command); then
+			$command
+		# else
+		# 	echo "Permission Denied: You may not run $command"
+		fi
+
+		echo -n "$(pwd) $ "
+		read command
+	done
+
+	# this will close the script and session
+	exit 0
+else
+	configureBlueshell $1 $2
+fi
+
+exit 0
