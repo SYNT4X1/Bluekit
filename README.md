@@ -25,4 +25,6 @@ Bluekit has a preconfigured install script that will move the toolkit to the /op
 > bluekit --version
 
 If there is a version number dumped to the terminal, your installation is complete. 
-Please reference the other tabs for information on implementations and configurations.
+
+### Configurations and Implementations
+Please vist the [Bluekit Docs](https://synt4x1.github.io/Bluekit/#/) for the corresponding documentation detailing implementing and configuring bluekit
