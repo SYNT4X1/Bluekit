@@ -1,4 +1,4 @@
-![Bluekit Logo](/resources/bluekit.png ':size=1920')
+![Bluekit Logo](https://raw.githubusercontent.com/SYNT4X1/Bluekit/docs/resources/bluekit.png ':size=1920')
 
 ### What is Bluekit?
 Bluekit is a suite of security tools that features an array tools meant to sniff out system information such as ssh keys, listening ports, active users, users with accessible shells and more. The toolkit is meant to be used in real-time environments and was tested in the NCAE Cybergames to secure servers on simulated topology.
